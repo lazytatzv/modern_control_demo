@@ -57,7 +57,7 @@ fn gen_matrices() -> Result<(usize, DMatrix<f64>, DMatrix<f64>, DMatrix<f64>)> {
 fn power_matrix(m: DMatrix<f64>, pow: usize) -> Result<DMatrix<f64>>{
    let mut result = m.clone(); 
 
-   for _ in 0..pow {
+   for _ in 0..(pow-1) {
         result *= m.clone();
    }
 
