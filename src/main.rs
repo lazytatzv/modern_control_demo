@@ -54,6 +54,9 @@ fn gen_matrices() -> Result<(usize, DMatrix<f64>, DMatrix<f64>, DMatrix<f64>)> {
     Ok((dim, a, b, c))
 }
 
+// 行列のn乗
+// 計算量O(k)
+// pow()
 fn power_matrix(m: DMatrix<f64>, pow: usize) -> Result<DMatrix<f64>>{
    let mut result = m.clone(); 
 
@@ -65,11 +68,29 @@ fn power_matrix(m: DMatrix<f64>, pow: usize) -> Result<DMatrix<f64>>{
 
 }
 
+fn hstack(x: &DMatrix<f64>, y: &DMatrix<f64>) -> Result<DMatrix<f64>> {
+    let (rows_x, cols_x) = x.shape();
+    let (_, cols_y) = y.shape();
+
+    let mut m = DMatrix::<f64>::zeros(rows_x, cols_x + cols_y);
+
+    m.slice_mut((0, 0), (rows_x, cols_x)).copy_from(&x);
+    m.slice_mut((0, cols_x), (rows_x, cols_y)).copy_from(&y);
+
+    Ok(m)
+}
+
+fn check_controlability(a: DMatrix<f64>, b: DMatrix<f64>) {
+    
+}
+
 fn main() -> Result<()> {
 
     let (dim, mut a, mut b, mut c) = gen_matrices()?;
 
-    println!("{}", power_matrix(a.clone(), 2)?);
+    //println!("{}", power_matrix(a.clone(), 2)?);
+    //println!("{}", a.clone().pow(2));
+    println!("{}", hstack(&a, &b)?);
  
     let eig = a.symmetric_eigen();
 
