@@ -68,9 +68,14 @@ fn power_matrix(m: DMatrix<f64>, pow: usize) -> Result<DMatrix<f64>>{
 
 }
 
+// 横連結
 fn hstack(x: &DMatrix<f64>, y: &DMatrix<f64>) -> Result<DMatrix<f64>> {
     let (rows_x, cols_x) = x.shape();
-    let (_, cols_y) = y.shape();
+    let (rows_y, cols_y) = y.shape();
+
+    if rows_x != rows_y {
+        anyhow::bail!("The rows are different!");
+    }
 
     let mut m = DMatrix::<f64>::zeros(rows_x, cols_x + cols_y);
 
@@ -79,6 +84,24 @@ fn hstack(x: &DMatrix<f64>, y: &DMatrix<f64>) -> Result<DMatrix<f64>> {
 
     Ok(m)
 }
+
+// 縦連結
+fn vstack(x: &DMatrix<f64>, y: &DMatrix<f64>) -> Result<DMatrix<f64>> {
+    let (rows_x, cols_x) = x.shape();
+    let (rows_y, cols_y) = y.shape();
+
+    if cols_x != cols_y {
+        anyhow::bail!("The columns are different!");
+    }
+
+    let mut m = DMatrix::<f64>::zeros(rows_x + rows_y, cols_x);
+
+    m.slice_mut((0, 0), (rows_x, cols_x)).copy_from(&x);
+    m.slice_mut((rows_x, 0), (rows_y, cols_x)).copy_from(&y);
+
+    Ok(m)
+}
+
 
 fn check_controlability(a: DMatrix<f64>, b: DMatrix<f64>) {
     
@@ -91,6 +114,7 @@ fn main() -> Result<()> {
     //println!("{}", power_matrix(a.clone(), 2)?);
     //println!("{}", a.clone().pow(2));
     println!("{}", hstack(&a, &b)?);
+    println!("{}", vstack(&a, &b)?);
  
     let eig = a.symmetric_eigen();
 
