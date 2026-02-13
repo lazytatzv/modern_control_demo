@@ -148,7 +148,7 @@ fn calc_rank(mut x: DMatrix<f64>) -> usize {
 
 }
 
-fn check_controlability(dim: usize, a: &DMatrix<f64>, b: &DMatrix<f64>) -> Result<String> {
+fn check_controllability(dim: usize, a: &DMatrix<f64>, b: &DMatrix<f64>) -> Result<String> {
     let mut m = b.clone();
 
     for i in 1..dim {
@@ -164,6 +164,24 @@ fn check_controlability(dim: usize, a: &DMatrix<f64>, b: &DMatrix<f64>) -> Resul
     Ok("Ok, Controllable!".into())
 
 }
+
+fn check_observability(dim: usize, a: &DMatrix<f64>, c: &DMatrix<f64>) -> Result<String> {
+    let mut m = c.clone();
+
+    for i in 1..dim {
+        let mut frag = c * a.pow((i as usize).try_into().unwrap());
+
+        m = vstack(&m, &frag)?;
+    }
+
+    if calc_rank(m) != dim {
+        anyhow::bail!("Not observable!");
+    }
+
+    Ok("Ok, Observable".into())
+
+}
+
 
 fn main() -> Result<()> {
 
@@ -185,7 +203,8 @@ fn main() -> Result<()> {
     } 
     println!("The system is stable");
 
-    println!("{}", check_controlability(dim, &a, &b)?);
+    println!("{}", check_controllability(dim, &a, &b)?);
+    println!("{}", check_observability(dim, &a, &c)?);
 
     Ok(())
 
