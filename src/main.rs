@@ -23,29 +23,68 @@ fn gen_matrices() -> Result<(usize, DMatrix<f64>, DMatrix<f64>, DMatrix<f64>)> {
 
     for i in 0..dim {
         for j in 0..dim {
-            println!("Elem of A[{}, {}]", i, j);
-            let mut buf = String::new();
-            io::stdin().read_line(&mut buf)?;
-            let elem: f64 = buf.trim().parse()?;
-            a[(i, j)] = elem; 
+
+            let elem: f64 = loop {
+                println!("Elem of A[{}, {}]", i, j);
+                let mut buf = String::new();
+                io::stdin().read_line(&mut buf)?;
+                
+                match buf.trim().parse::<f64>() {
+                    Ok(elem) => {
+                        break elem;
+                    },
+                    Err(_) => {
+                        println!("Invalid input.");
+                        continue;
+                    }
+                };
+
+            };
+            a[(i, j)] = elem;
+
         }
     }
     println!("Your system matrix is {}", a);
 
     for i in 0..dim {
-        println!("Elem of B[{}, 0]", i);
-        let mut buf = String::new();
-        io::stdin().read_line(&mut buf)?;
-        let elem: f64 = buf.trim().parse()?;
+        let elem: f64 = loop {
+            println!("Elem of B[{}, 0]", i);
+            let mut buf = String::new();
+            io::stdin().read_line(&mut buf)?;
+
+            match buf.trim().parse::<f64>() {
+                Ok(elem) => {
+                    break elem;
+                },
+                Err(_) => {
+                    println!("Invalid input.");
+                    continue;
+                }
+            };
+        };
+
         b[(i, 0)] = elem;
     }
     println!("Your vector B is {}", b);
 
     for i in 0..dim {
-        println!("Elem of C[0, {}]", i);
-        let mut buf = String::new();
-        io::stdin().read_line(&mut buf)?;
-        let elem: f64 = buf.trim().parse()?;
+
+        let elem: f64 = loop {
+            println!("Elem of C[0, {}]", i);
+            let mut buf = String::new();
+            io::stdin().read_line(&mut buf)?;
+
+            match buf.trim().parse::<f64>() {
+                Ok(elem) => {
+                    break elem;
+                },
+                Err(_) => {
+                    println!("Invalid input.");
+                    continue;
+                }
+            };
+        };
+
         c[(0, i)] = elem;
     }
     println!("Your vector C is {}", c);
@@ -113,6 +152,7 @@ fn calc_rank(mut x: DMatrix<f64>) -> usize {
     for col in 0..ncols {
 
         let mut pivot_row = None;
+
         for r in row..nrows {
             if x[(r, col)].abs() > tol {
                 pivot_row = Some(r);
@@ -121,6 +161,7 @@ fn calc_rank(mut x: DMatrix<f64>) -> usize {
         }
 
         if let Some(pivot) = pivot_row {
+
             if pivot != row {
                 /*
                 let tmp = x.row(row).clone_owned();
@@ -129,25 +170,28 @@ fn calc_rank(mut x: DMatrix<f64>) -> usize {
                 */
                 x.swap_rows(row, pivot);
             }
+
+            
+            let pivot_val = x[(row, col)];
+            x.row_mut(row).scale_mut(1.0 / pivot_val);
+
+
+            for r in (row + 1)..nrows {
+                let factor = x[(r, col)];
+                let scaled_row = x.row(row) * factor;
+                let mut target_row = x.row_mut(r);
+                target_row -= &scaled_row;
+            }
+
+            row += 1;
+            rank += 1;
         }
-
-        let pivot_val = x[(row, col)];
-        x.row_mut(row).scale_mut(1.0 / pivot_val);
-
-        for r in (row + 1)..nrows {
-            let factor = x[(r, col)];
-            let scaled_row = x.row(row) * factor;
-            let mut target_row = x.row_mut(r);
-            target_row -= &scaled_row;
-        }
-
-        row += 1;
-        rank += 1;
     }
     rank
 
 }
 
+// 可制御判定
 fn check_controllability(dim: usize, a: &DMatrix<f64>, b: &DMatrix<f64>) -> Result<String> {
     let mut m = b.clone();
 
@@ -157,14 +201,17 @@ fn check_controllability(dim: usize, a: &DMatrix<f64>, b: &DMatrix<f64>) -> Resu
         m = hstack(&m, &frag)?; 
     }
 
-    if calc_rank(m) != dim {
+    if calc_rank(m.clone()) != dim {
         anyhow::bail!("Not controllable!");
     }
+
+    println!("matrix:{:?}, rank: {}", m.clone(), calc_rank(m));
 
     Ok("Ok, Controllable!".into())
 
 }
 
+// 可観測判定
 fn check_observability(dim: usize, a: &DMatrix<f64>, c: &DMatrix<f64>) -> Result<String> {
     let mut m = c.clone();
 
@@ -203,8 +250,8 @@ fn main() -> Result<()> {
     } 
     println!("The system is stable");
 
-    println!("{}", check_controllability(dim, &a, &b)?);
-    println!("{}", check_observability(dim, &a, &c)?);
+    println!("Controllability: {}", check_controllability(dim, &a, &b)?);
+    println!("Observability: {}", check_observability(dim, &a, &c)?);
 
     Ok(())
 
