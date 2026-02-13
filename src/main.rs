@@ -102,9 +102,67 @@ fn vstack(x: &DMatrix<f64>, y: &DMatrix<f64>) -> Result<DMatrix<f64>> {
     Ok(m)
 }
 
+fn calc_rank(mut x: DMatrix<f64>) -> usize {
+    let tol = 1e-10;
+    let mut rank = 0;
 
-fn check_controlability(a: DMatrix<f64>, b: DMatrix<f64>) {
-    
+    let nrows = x.nrows();
+    let ncols = x.ncols();
+    let mut row = 0;
+
+    for col in 0..ncols {
+
+        let mut pivot_row = None;
+        for r in row..nrows {
+            if x[(r, col)].abs() > tol {
+                pivot_row = Some(r);
+                break;
+            }
+        }
+
+        if let Some(pivot) = pivot_row {
+            if pivot != row {
+                /*
+                let tmp = x.row(row).clone_owned();
+                x.row_mut(row).copy_from(&x.row(pivot));
+                x.row_mut(pivot).copy_from(&tmp);
+                */
+                x.swap_rows(row, pivot);
+            }
+        }
+
+        let pivot_val = x[(row, col)];
+        x.row_mut(row).scale_mut(1.0 / pivot_val);
+
+        for r in (row + 1)..nrows {
+            let factor = x[(r, col)];
+            let scaled_row = x.row(row) * factor;
+            let mut target_row = x.row_mut(r);
+            target_row -= &scaled_row;
+        }
+
+        row += 1;
+        rank += 1;
+    }
+    rank
+
+}
+
+fn check_controlability(dim: usize, a: &DMatrix<f64>, b: &DMatrix<f64>) -> Result<String> {
+    let mut m = b.clone();
+
+    for i in 1..dim {
+        let mut frag = a.pow((i as usize).try_into().unwrap()) * b;
+
+        m = hstack(&m, &frag)?; 
+    }
+
+    if calc_rank(m) != dim {
+        anyhow::bail!("Not controllable!");
+    }
+
+    Ok("Ok, Controllable!".into())
+
 }
 
 fn main() -> Result<()> {
@@ -113,10 +171,10 @@ fn main() -> Result<()> {
 
     //println!("{}", power_matrix(a.clone(), 2)?);
     //println!("{}", a.clone().pow(2));
-    println!("{}", hstack(&a, &b)?);
-    println!("{}", vstack(&a, &b)?);
+    //println!("{}", hstack(&a, &b)?);
+    //println!("{}", vstack(&a, &b)?);
  
-    let eig = a.symmetric_eigen();
+    let eig = a.clone().symmetric_eigen();
 
     for val in eig.eigenvalues.iter() {
         if *val >= 0.0 {
@@ -127,11 +185,7 @@ fn main() -> Result<()> {
     } 
     println!("The system is stable");
 
-    let mut m_c = DMatrix::<f64>::zeros(dim, dim);
-
-    for i in 0..dim {
-
-    }
+    println!("{}", check_controlability(dim, &a, &b)?);
 
     Ok(())
 
