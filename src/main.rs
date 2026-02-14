@@ -3,6 +3,7 @@ use anyhow::Result;
 use std::any::Any;
 use nalgebra::{DMatrix, DVector, Dyn, Matrix};
 
+// 行列を初期化する
 fn gen_matrices() -> Result<(usize, DMatrix<f64>, DMatrix<f64>, DMatrix<f64>)> {
     let mut buffer = String::new();
 
@@ -141,6 +142,7 @@ fn vstack(x: &DMatrix<f64>, y: &DMatrix<f64>) -> Result<DMatrix<f64>> {
     Ok(m)
 }
 
+// rank計算
 fn calc_rank(mut x: DMatrix<f64>) -> usize {
     let tol = 1e-10;
     let mut rank = 0;
